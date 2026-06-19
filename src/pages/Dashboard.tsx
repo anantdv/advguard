@@ -124,73 +124,93 @@ export const Dashboard: React.FC = () => {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-        <StatsCard 
-          title="Total Customers" 
-          value={totalCustomers} 
-          icon={Users} 
-          colorClass="from-indigo-500/10 to-indigo-600/5 border-indigo-500/20 text-indigo-400"
-        />
-        <StatsCard 
-          title="Total Devices" 
-          value={totalDevices} 
-          icon={HardDrive} 
-          colorClass="from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-400"
-        />
-        <StatsCard 
-          title="Active Licenses" 
-          value={activeLicenses} 
-          icon={ShieldCheck} 
-          colorClass="from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 text-emerald-400"
-          description="Services fully operational"
-        />
-        <StatsCard 
-          title="Expired Devices" 
-          value={expiredLicenses} 
-          icon={ShieldOff} 
-          colorClass="from-rose-500/10 to-rose-600/5 border-rose-500/20 text-rose-400"
-          description="Needs instant renewal"
-        />
-        <StatsCard 
-          title="Expiring In 7 Days" 
-          value={expiring7Days} 
-          icon={AlertTriangle} 
-          colorClass="from-amber-500/10 to-amber-600/5 border-amber-500/20 text-amber-400"
-          description={`Expiring in 30 days: ${expiring30Days}`}
-        />
-        <StatsCard 
-          title="Open Tickets" 
-          value={openTickets} 
-          icon={Ticket} 
-          colorClass="from-pink-500/10 to-pink-600/5 border-pink-500/20 text-pink-400"
-        />
-        <StatsCard 
-          title="SLA Breached" 
-          value={slaBreachedTickets} 
-          icon={Clock} 
-          colorClass="from-red-500/10 to-red-600/5 border-red-500/20 text-red-400"
-          description="Urgent action required"
-        />
-        <StatsCard 
-          title="Renewals Due (Month)" 
-          value={renewalsDueCount} 
-          icon={Calendar} 
-          colorClass="from-sky-500/10 to-sky-600/5 border-sky-500/20 text-sky-400"
-        />
-        <StatsCard 
-          title="Revenue Forecast" 
-          value={`$${forecastRevenue.toLocaleString()}`} 
-          icon={DollarSign} 
-          colorClass="from-teal-500/10 to-teal-600/5 border-teal-500/20 text-teal-400"
-          description="This month renewals"
-          trend={{ value: '+14%', positive: true }}
-        />
-        <StatsCard 
-          title="Total Forecast" 
-          value="$38,500" 
-          icon={TrendingUp} 
-          colorClass="from-violet-500/10 to-violet-600/5 border-violet-500/20 text-violet-400"
-          description="Next 6-month pipeline"
-        />
+        <Link to="/customers" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Total Customers" 
+            value={totalCustomers} 
+            icon={Users} 
+            colorClass="from-indigo-500/10 to-indigo-600/5 border-indigo-500/20 text-indigo-400"
+          />
+        </Link>
+        <Link to="/devices" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Total Devices" 
+            value={totalDevices} 
+            icon={HardDrive} 
+            colorClass="from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-400"
+          />
+        </Link>
+        <Link to="/devices" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Active Licenses" 
+            value={activeLicenses} 
+            icon={ShieldCheck} 
+            colorClass="from-emerald-500/10 to-emerald-600/5 border-emerald-500/20 text-emerald-400"
+            description="Services fully operational"
+          />
+        </Link>
+        <Link to="/devices" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Expired Devices" 
+            value={expiredLicenses} 
+            icon={ShieldOff} 
+            colorClass="from-rose-500/10 to-rose-600/5 border-rose-500/20 text-rose-400"
+            description="Needs instant renewal"
+          />
+        </Link>
+        <Link to="/devices" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Expiring In 7 Days" 
+            value={expiring7Days} 
+            icon={AlertTriangle} 
+            colorClass="from-amber-500/10 to-amber-600/5 border-amber-500/20 text-amber-400"
+            description={`Expiring in 30 days: ${expiring30Days}`}
+          />
+        </Link>
+        <Link to="/tickets" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Open Tickets" 
+            value={openTickets} 
+            icon={Ticket} 
+            colorClass="from-pink-500/10 to-pink-600/5 border-pink-500/20 text-pink-400"
+          />
+        </Link>
+        <Link to="/tickets" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="SLA Breached" 
+            value={slaBreachedTickets} 
+            icon={Clock} 
+            colorClass="from-red-500/10 to-red-600/5 border-red-500/20 text-red-400"
+            description="Urgent action required"
+          />
+        </Link>
+        <Link to="/renewals" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Renewals Due (Month)" 
+            value={renewalsDueCount} 
+            icon={Calendar} 
+            colorClass="from-sky-500/10 to-sky-600/5 border-sky-500/20 text-sky-400"
+          />
+        </Link>
+        <Link to="/renewals" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Revenue Forecast" 
+            value={`$${forecastRevenue.toLocaleString()}`} 
+            icon={DollarSign} 
+            colorClass="from-teal-500/10 to-teal-600/5 border-teal-500/20 text-teal-400"
+            description="This month renewals"
+            trend={{ value: '+14%', positive: true }}
+          />
+        </Link>
+        <Link to="/renewals" className="block transform hover:-translate-y-1 transition duration-300">
+          <StatsCard 
+            title="Total Forecast" 
+            value="$38,500" 
+            icon={TrendingUp} 
+            colorClass="from-violet-500/10 to-violet-600/5 border-violet-500/20 text-violet-400"
+            description="Next 6-month pipeline"
+          />
+        </Link>
       </div>
 
       {/* Charts Section */}
