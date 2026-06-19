@@ -7,15 +7,11 @@ import {
   LicenseType, SupportType, TicketCategory, RenewalStatus
 } from '../types';
 
-// Helper to make API calls directly to ERPNext to avoid circular dependencies
+// Helper to make API calls directly to ERPNext relative to local proxy to carry cookies
 const erpnextRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
   const baseUrl = '';
-  const apiKey = import.meta.env.VITE_ERPNEXT_API_KEY || '2be0a74aae72d50';
-  const apiSecret = import.meta.env.VITE_ERPNEXT_API_SECRET || '46d66d41277e3dc';
-  
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Authorization": `token ${apiKey}:${apiSecret}`
+    "Content-Type": "application/json"
   };
 
   const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -26,11 +22,11 @@ const erpnextRequest = async (endpoint: string, method: string = 'GET', body?: a
   
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`ERPNext API failed: ${response.status} - ${errorText}`);
+    throw new Error(`ERPNext REST failed: ${response.status} - ${errorText}`);
   }
   
   const json = await response.json();
-  return json.data;
+  return json.data || json.message || json;
 };
 
 // Helper function to calculate License Status based on current date (2026-06-19)
@@ -62,6 +58,7 @@ export const calculateLicenseStatus = (endDateStr: string, currentStatus: string
 
 interface AppState {
   currentUser: User;
+  isLoggedIn: boolean;
   customers: Customer[];
   devices: Device[];
   plans: SubscriptionPlan[];
@@ -73,6 +70,8 @@ interface AppState {
   isLoading: boolean;
   
   // Actions
+  login: (usr: string, pwd: string) => Promise<boolean>;
+  logout: () => void;
   fetchLiveERPData: () => Promise<void>;
   setCurrentUser: (user: User) => void;
   updateCustomerContacts: (customerId: string, contacts: CustomerContact[]) => void;
@@ -104,12 +103,12 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   currentUser: {
-    id: 'admin-1',
-    name: 'Sarah Jenkins',
-    email: 'sarah.j@apexglobal.com',
-    role: 'admin',
-    customerId: 'CUST-001'
+    id: 'guest',
+    name: 'Guest User',
+    email: '',
+    role: 'support'
   },
+  isLoggedIn: false,
   customers: [],
   devices: [],
   plans: [],
@@ -120,7 +119,46 @@ export const useAppStore = create<AppState>((set, get) => ({
   activityLogs: [],
   isLoading: false,
   
+  login: async (usr, pwd) => {
+    try {
+      const response = await erpnextRequest('/api/method/login', 'POST', { usr, pwd });
+      
+      // On successful ERPNext login, get current logged user details
+      const loggedUserEmail = await erpnextRequest('/api/method/frappe.auth.get_logged_user', 'GET');
+      
+      set({
+        currentUser: {
+          id: loggedUserEmail,
+          name: loggedUserEmail.split('@')[0],
+          email: loggedUserEmail,
+          role: loggedUserEmail === 'Administrator' ? 'admin' : 'support'
+        },
+        isLoggedIn: true
+      });
+      
+      await get().fetchLiveERPData();
+      return true;
+    } catch (err) {
+      console.error("Login verification failed:", err);
+      return false;
+    }
+  },
+  
+  logout: () => {
+    set({
+      currentUser: { id: 'guest', name: 'Guest User', email: '', role: 'support' },
+      isLoggedIn: false,
+      customers: [],
+      devices: [],
+      plans: [],
+      renewalHistory: [],
+      tickets: [],
+      slaConfigs: []
+    });
+  },
+
   fetchLiveERPData: async () => {
+    if (!get().isLoggedIn) return; // Fetch only if user session is validated
     set({ isLoading: true });
     try {
       // 1. Fetch Customers
@@ -390,21 +428,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   
-  updateTicketStatus: (ticketId, status, user) => {
-    // Local fallback/sync
-  },
-  
-  updateTicketPriority: (ticketId, priority, user) => {
-    // Local fallback
-  },
-  
-  assignTicket: (ticketId, assignedTo, user) => {
-    // Local assignment
-  },
-  
-  addTicketComment: (ticketId, commentText, user, isInternal) => {
-    // Add comment local
-  },
+  updateTicketStatus: (ticketId, status, user) => {},
+  updateTicketPriority: (ticketId, priority, user) => {},
+  assignTicket: (ticketId, assignedTo, user) => {},
+  addTicketComment: (ticketId, commentText, user, isInternal) => {},
   
   addSubscriptionPlan: async (plan) => {
     try {
@@ -447,7 +474,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   
   updateSLAConfig: (sla) => {},
-  
   markNotificationAsRead: (id) => {},
   addNotification: (type, message, targetId) => {},
   addActivityLog: (type, message, userId, userName) => {}

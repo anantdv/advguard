@@ -12,16 +12,21 @@ import TicketDetail from '../pages/TicketDetail';
 import SLA from '../pages/SLA';
 import Reports from '../pages/Reports';
 import Settings from '../pages/Settings';
+import Login from '../pages/Login';
 
-interface RoleProtectedRouteProps {
+interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles: ('admin' | 'support' | 'sales')[];
+  allowedRoles?: ('admin' | 'support' | 'sales')[];
 }
 
-const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const currentUser = useAppStore(state => state.currentUser);
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { isLoggedIn, currentUser } = useAppStore();
   
-  if (!allowedRoles.includes(currentUser.role as any)) {
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (allowedRoles && !allowedRoles.includes(currentUser.role as any)) {
     if (currentUser.role === 'support') {
       return <Navigate to="/tickets" replace />;
     }
@@ -35,32 +40,38 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ children, allow
 };
 
 export const AppRoutes: React.FC = () => {
-  const currentUser = useAppStore(state => state.currentUser);
+  const { isLoggedIn, currentUser } = useAppStore();
 
   return (
     <Routes>
-      {/* Dashboard - Admin only */}
+      {/* Public Routes */}
+      <Route 
+        path="/login" 
+        element={isLoggedIn ? <Navigate to="/" replace /> : <Login />} 
+      />
+
+      {/* Protected Routes */}
       <Route 
         path="/" 
         element={
-          currentUser.role === 'support' ? (
-            <Navigate to="/tickets" replace />
-          ) : currentUser.role === 'sales' ? (
-            <Navigate to="/renewals" replace />
-          ) : (
-            <RoleProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute>
+            {currentUser.role === 'support' ? (
+              <Navigate to="/tickets" replace />
+            ) : currentUser.role === 'sales' ? (
+              <Navigate to="/renewals" replace />
+            ) : (
               <Dashboard />
-            </RoleProtectedRoute>
-          )
+            )}
+          </ProtectedRoute>
         } 
       />
       
       <Route 
         path="/dashboard" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <Dashboard />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -68,18 +79,18 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/customers" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
+          <ProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
             <Customers />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
       
       <Route 
         path="/customers/:id" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
+          <ProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
             <CustomerDetail />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -87,18 +98,18 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/devices" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
+          <ProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
             <Devices />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
       
       <Route 
         path="/devices/:id" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
+          <ProtectedRoute allowedRoles={['admin', 'support', 'sales']}>
             <DeviceDetail />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -106,9 +117,9 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/renewals" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'sales']}>
+          <ProtectedRoute allowedRoles={['admin', 'sales']}>
             <Renewals />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -116,18 +127,18 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/tickets" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'support']}>
+          <ProtectedRoute allowedRoles={['admin', 'support']}>
             <Tickets />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
       
       <Route 
         path="/tickets/:id" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin', 'support']}>
+          <ProtectedRoute allowedRoles={['admin', 'support']}>
             <TicketDetail />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -135,9 +146,9 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/sla" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <SLA />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -145,9 +156,9 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/reports" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <Reports />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
@@ -155,9 +166,9 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/settings" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <Settings />
-          </RoleProtectedRoute>
+          </ProtectedRoute>
         } 
       />
 
