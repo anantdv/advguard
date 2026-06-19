@@ -4,6 +4,7 @@ import { Device, DeviceStatus, LicenseStatus, LicenseType, SupportType } from '.
 import { Link } from 'react-router-dom';
 import { Search, HardDrive, Filter, SlidersHorizontal, Plus, AlertCircle } from 'lucide-react';
 import FilterDrawer from '../components/common/FilterDrawer';
+import Pagination from '../components/common/Pagination';
 
 export const Devices: React.FC = () => {
   const { devices, customers, addDevice, isLoading } = useAppStore();
@@ -28,6 +29,9 @@ export const Devices: React.FC = () => {
   const [location, setLocation] = useState('');
   const [autoRenewal, setAutoRenewal] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
   const filteredDevices = devices.filter(d => {
     const customer = customers.find(c => c.id === d.customerId);
     const customerName = customer ? customer.name.toLowerCase() : '';
@@ -46,6 +50,11 @@ export const Devices: React.FC = () => {
     
     return matchesSearch && matchesStatus && matchesLicenseStatus && matchesType;
   });
+
+  const paginatedDevices = filteredDevices.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const getLicenseBadgeClass = (lStatus: LicenseStatus) => {
     switch (lStatus) {
@@ -148,7 +157,7 @@ export const Devices: React.FC = () => {
             type="text"
             placeholder="Search by IP, Hostname, S/N, MAC, or Customer..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-9 pr-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 transition"
           />
         </div>
@@ -157,7 +166,7 @@ export const Devices: React.FC = () => {
         <div className="hidden md:flex gap-2">
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-350"
           >
             <option value="All">All Device Statuses</option>
@@ -169,7 +178,7 @@ export const Devices: React.FC = () => {
 
           <select
             value={selectedLicenseStatus}
-            onChange={(e) => setSelectedLicenseStatus(e.target.value)}
+            onChange={(e) => { setSelectedLicenseStatus(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-350"
           >
             <option value="All">All License Statuses</option>
@@ -182,7 +191,7 @@ export const Devices: React.FC = () => {
 
           <select
             value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
+            onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-350"
           >
             <option value="All">All Term Plans</option>
@@ -211,6 +220,7 @@ export const Devices: React.FC = () => {
           setSelectedStatus('All');
           setSelectedLicenseStatus('All');
           setSelectedType('All');
+          setCurrentPage(1);
         }}
       >
         <div className="space-y-4">
@@ -218,7 +228,7 @@ export const Devices: React.FC = () => {
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Device Status</label>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
               className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-850 rounded text-slate-300"
             >
               <option value="All">All Device Statuses</option>
@@ -244,7 +254,7 @@ export const Devices: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {filteredDevices.map(d => {
+            {paginatedDevices.map(d => {
               const customer = customers.find(c => c.id === d.customerId);
               return (
                 <tr key={d.id} className="hover:bg-slate-850/40 transition">
@@ -297,6 +307,13 @@ export const Devices: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={filteredDevices.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Add Device Modal */}
       {isAddModalOpen && (

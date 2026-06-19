@@ -4,6 +4,7 @@ import { Customer, CustomerType, CustomerStatus } from '../types';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Filter, UserCheck, ShieldAlert, FileSpreadsheet, SlidersHorizontal } from 'lucide-react';
 import FilterDrawer from '../components/common/FilterDrawer';
+import Pagination from '../components/common/Pagination';
 
 export const Customers: React.FC = () => {
   const { customers, addCustomer } = useAppStore();
@@ -27,6 +28,9 @@ export const Customers: React.FC = () => {
   const [newCountry, setNewCountry] = useState('USA');
   const [newPostalCode, setNewPostalCode] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
   const filteredCustomers = customers.filter(c => {
     const matchesSearch = 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,6 +43,11 @@ export const Customers: React.FC = () => {
     
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleAddCustomer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +133,7 @@ export const Customers: React.FC = () => {
             type="text"
             placeholder="Search by ID, name, email, or company..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-9 pr-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 transition"
           />
         </div>
@@ -133,7 +142,7 @@ export const Customers: React.FC = () => {
         <div className="hidden md:flex gap-2">
           <select
             value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
+            onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
           >
             <option value="All">All Types</option>
@@ -146,7 +155,7 @@ export const Customers: React.FC = () => {
 
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
           >
             <option value="All">All Statuses</option>
@@ -172,6 +181,7 @@ export const Customers: React.FC = () => {
         onReset={() => {
           setSelectedType('All');
           setSelectedStatus('All');
+          setCurrentPage(1);
         }}
       >
         <div className="space-y-4">
@@ -179,7 +189,7 @@ export const Customers: React.FC = () => {
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Customer Type</label>
             <select
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
+              onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
               className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300"
             >
               <option value="All">All Types</option>
@@ -195,7 +205,7 @@ export const Customers: React.FC = () => {
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Status</label>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
               className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300"
             >
               <option value="All">All Statuses</option>
@@ -209,7 +219,7 @@ export const Customers: React.FC = () => {
 
       {/* Customer List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCustomers.map(customer => (
+        {paginatedCustomers.map(customer => (
           <Link
             key={customer.id}
             to={`/customers/${customer.id}`}
@@ -257,6 +267,13 @@ export const Customers: React.FC = () => {
           </div>
         )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={filteredCustomers.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Add Customer Modal */}
       {isAddModalOpen && (

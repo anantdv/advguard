@@ -7,6 +7,7 @@ import {
   MessageSquare, User, Filter, SlidersHorizontal, LayoutGrid, ListTodo
 } from 'lucide-react';
 import FilterDrawer from '../components/common/FilterDrawer';
+import Pagination from '../components/common/Pagination';
 
 export const Tickets: React.FC = () => {
   const { tickets, customers, devices, addSupportTicket, currentUser } = useAppStore();
@@ -26,6 +27,9 @@ export const Tickets: React.FC = () => {
   const [newCategory, setNewCategory] = useState<TicketCategory>('Technical');
   const [newPriority, setNewPriority] = useState<TicketPriority>('Medium');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
   const filteredTickets = tickets.filter(t => {
     const cust = customers.find(c => c.id === t.customerId);
     const dev = devices.find(d => d.id === t.deviceId);
@@ -38,6 +42,11 @@ export const Tickets: React.FC = () => {
 
     return matchesSearch && matchesPriority && matchesStatus && matchesCategory;
   });
+
+  const paginatedTickets = filteredTickets.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const getPriorityClass = (priority: TicketPriority) => {
     switch (priority) {
@@ -134,7 +143,7 @@ export const Tickets: React.FC = () => {
             type="text"
             placeholder="Search by case summary, device serial, client, ID..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-9 pr-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 transition"
           />
         </div>
@@ -143,7 +152,7 @@ export const Tickets: React.FC = () => {
         <div className="hidden md:flex gap-2">
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-350"
           >
             <option value="All">All Statuses</option>
@@ -153,7 +162,7 @@ export const Tickets: React.FC = () => {
 
           <select
             value={selectedPriority}
-            onChange={(e) => setSelectedPriority(e.target.value)}
+            onChange={(e) => { setSelectedPriority(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-35"
           >
             <option value="All">All Priorities</option>
@@ -165,7 +174,7 @@ export const Tickets: React.FC = () => {
 
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-35"
           >
             <option value="All">All Categories</option>
@@ -194,6 +203,7 @@ export const Tickets: React.FC = () => {
           setSelectedStatus('All');
           setSelectedPriority('All');
           setSelectedCategory('All');
+          setCurrentPage(1);
         }}
       >
         <div className="space-y-4">
@@ -201,7 +211,7 @@ export const Tickets: React.FC = () => {
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Status</label>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
               className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300"
             >
               <option value="All">All Statuses</option>
@@ -213,7 +223,7 @@ export const Tickets: React.FC = () => {
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Priority</label>
             <select
               value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value)}
+              onChange={(e) => { setSelectedPriority(e.target.value); setCurrentPage(1); }}
               className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300"
             >
               <option value="All">All Priorities</option>
@@ -229,7 +239,7 @@ export const Tickets: React.FC = () => {
       {/* List / Kanban Switchable Area */}
       {viewMode === 'list' ? (
         <div className="space-y-3">
-          {filteredTickets.map(t => {
+          {paginatedTickets.map(t => {
             const cust = customers.find(c => c.id === t.customerId);
             const dev = devices.find(d => d.id === t.deviceId);
             return (
@@ -274,6 +284,13 @@ export const Tickets: React.FC = () => {
               No tickets matched current selection filters.
             </div>
           )}
+
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredTickets.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
         </div>
       ) : (
         /* Kanban Board View */

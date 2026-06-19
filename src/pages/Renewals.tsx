@@ -5,6 +5,7 @@ import {
   Plus, Search, RefreshCw, Calendar, AlertTriangle, 
   DollarSign, CheckCircle, Clock, FileSpreadsheet, Send
 } from 'lucide-react';
+import Pagination from '../components/common/Pagination';
 
 export const Renewals: React.FC = () => {
   const { plans, renewalHistory, devices, customers, addSubscriptionPlan, renewDeviceLicense } = useAppStore();
@@ -30,6 +31,8 @@ export const Renewals: React.FC = () => {
 
   // Filter States for Renewal History
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   const filteredHistory = renewalHistory.filter(h => {
     const device = devices.find(d => d.id === h.deviceId);
@@ -37,6 +40,11 @@ export const Renewals: React.FC = () => {
     const matchStr = `${h.id} ${device?.systemName} ${customer?.name}`.toLowerCase();
     return matchStr.includes(searchTerm.toLowerCase());
   });
+
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   // Calculate Overdue & Upcoming
   const today = new Date('2026-06-19');
@@ -148,7 +156,7 @@ export const Renewals: React.FC = () => {
                 type="text"
                 placeholder="Filter transactions by customer, device name or invoice ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full pl-9 pr-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 transition"
               />
             </div>
@@ -166,7 +174,7 @@ export const Renewals: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  {filteredHistory.map(h => {
+                  {paginatedHistory.map(h => {
                     const dev = devices.find(d => d.id === h.deviceId);
                     const cust = customers.find(c => c.id === h.customerId);
                     return (
@@ -201,6 +209,13 @@ export const Renewals: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredHistory.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
 
           </div>
         )}

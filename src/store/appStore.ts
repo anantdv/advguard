@@ -188,7 +188,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true });
     try {
       // 1. Fetch Customers
-      const erpCustomers = await erpnextRequest('/api/resource/Customer?fields=["name","customer_name","email_id","mobile_no","customer_type","creation"]');
+      const erpCustomers = await erpnextRequest('/api/resource/Customer?limit_page_length=1000&fields=["name","customer_name","email_id","mobile_no","customer_type","creation"]');
       const customersMapped = erpCustomers.map((c: any): Customer => ({
         id: c.name,
         name: c.customer_name,
@@ -203,7 +203,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       // 2. Fetch Devices
-      const erpDevices = await erpnextRequest('/api/resource/ADVGuard Device?fields=["*"]');
+      const erpDevices = await erpnextRequest('/api/resource/ADVGuard Device?limit_page_length=1000&fields=["*"]');
       const devicesMapped = erpDevices.map((d: any): Device => ({
         id: d.serial_number,
         customerId: d.customer,
@@ -237,7 +237,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       // 3. Fetch Plans
-      const erpPlans = await erpnextRequest('/api/resource/ADVGuard Subscription Plan?fields=["*"]');
+      const erpPlans = await erpnextRequest('/api/resource/ADVGuard Subscription Plan?limit_page_length=1000&fields=["*"]');
       const plansMapped = erpPlans.map((p: any): SubscriptionPlan => ({
         id: p.name,
         name: p.plan_name,
@@ -250,7 +250,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       // 4. Fetch Renewals
-      const erpRenewals = await erpnextRequest('/api/resource/ADVGuard Renewal Record?fields=["*"]');
+      const erpRenewals = await erpnextRequest('/api/resource/ADVGuard Renewal Record?limit_page_length=1000&fields=["*"]');
       const renewalsMapped = erpRenewals.map((r: any): RenewalHistory => ({
         id: r.name,
         customerId: r.customer,
@@ -267,7 +267,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       // 5. Fetch Tickets (Issues)
-      const erpTickets = await erpnextRequest('/api/resource/Issue?fields=["name","subject","description","customer","status","priority","creation"]');
+      const erpTickets = await erpnextRequest('/api/resource/Issue?limit_page_length=1000&fields=["name","subject","description","customer","status","priority","creation"]');
       const ticketsMapped = erpTickets.map((t: any): SupportTicket => ({
         id: t.name,
         customerId: t.customer || 'CUST-001',
