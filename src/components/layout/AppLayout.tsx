@@ -3,13 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import { 
   LayoutDashboard, Users, ShieldAlert, FileText, Settings, 
-  Menu, Bell, Wrench, RefreshCw, Key
+  Menu, Bell, Wrench, RefreshCw, Key, LogOut, User
 } from 'lucide-react';
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, notifications, markNotificationAsRead } = useAppStore();
+  const { currentUser, notifications, markNotificationAsRead, logout } = useAppStore();
   const location = useLocation();
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin'] },
@@ -47,9 +48,18 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         {/* Profile Card */}
         <div className="p-4 border-b border-slate-800 text-xs">
           <label className="text-[9px] uppercase font-bold tracking-wider text-slate-500 block mb-1">Session Identity</label>
-          <div className="p-2 rounded bg-slate-950/40 border border-slate-850">
-            <p className="font-bold text-slate-200">{currentUser.name}</p>
-            <p className="text-[9px] text-slate-500 capitalize">{currentUser.role} Desk Staff</p>
+          <div className="p-2 rounded bg-slate-950/40 border border-slate-850 flex justify-between items-center">
+            <div>
+              <p className="font-bold text-slate-200">{currentUser.name}</p>
+              <p className="text-[9px] text-slate-500 capitalize">{currentUser.role} Desk Staff</p>
+            </div>
+            <button
+              onClick={() => logout()}
+              className="p-1.5 rounded bg-slate-850 hover:bg-rose-950/30 text-slate-400 hover:text-rose-400 transition"
+              title="Log Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -129,6 +139,42 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                         </div>
                       ))
                     )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-800/80 border border-slate-700/60 hover:bg-slate-805 hover:text-white transition text-slate-300"
+              >
+                <div className="w-6 h-6 rounded-full bg-brand-600/30 border border-brand-500/40 text-brand-400 flex items-center justify-center font-bold text-[10px] uppercase shrink-0">
+                  {currentUser.name.slice(0, 2)}
+                </div>
+                <span className="hidden sm:inline text-xs font-semibold pr-1 max-w-[100px] truncate">{currentUser.name}</span>
+              </button>
+
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden text-xs">
+                  <div className="p-3 bg-slate-950 border-b border-slate-800">
+                    <p className="font-bold text-slate-200 truncate">{currentUser.name}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{currentUser.email || `${currentUser.name}@company.com`}</p>
+                    <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded text-[8px] uppercase font-bold bg-brand-950 text-brand-400 border border-brand-500/20">
+                      {currentUser.role} Account
+                    </span>
+                  </div>
+                  <div className="p-1">
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded text-rose-400 hover:bg-rose-950/20 transition-colors font-bold text-left"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Log Out
+                    </button>
                   </div>
                 </div>
               )}
