@@ -99,6 +99,9 @@ interface AppState {
   markNotificationAsRead: (id: string) => void;
   addNotification: (type: string, message: string, targetId?: string) => void;
   addActivityLog: (type: string, message: string, userId: string, userName: string) => void;
+  uploadDeviceFile: (deviceSystemId: string, file: File) => Promise<any>;
+  fetchDeviceFiles: (deviceSystemId: string) => Promise<any[]>;
+  deleteDeviceFile: (fileDocName: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -502,6 +505,50 @@ export const useAppStore = create<AppState>((set, get) => ({
   updateSLAConfig: (sla) => {},
   markNotificationAsRead: (id) => {},
   addNotification: (type, message, targetId) => {},
-  addActivityLog: (type, message, userId, userName) => {}
+  addActivityLog: (type, message, userId, userName) => {},
+
+  uploadDeviceFile: async (deviceSystemId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('doctype', 'ADVGuard Device');
+    formData.append('docname', deviceSystemId);
+    formData.append('is_private', '0');
+    formData.append('folder', 'Home/Attachments');
+
+    const response = await fetch('/api/method/upload_file', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`File upload failed: ${response.status} - ${text}`);
+    }
+
+    const json = await response.json();
+    return json.message;
+  },
+
+  fetchDeviceFiles: async (deviceSystemId) => {
+    try {
+      const files = await erpnextRequest(
+        `/api/resource/File?filters=[["attached_to_doctype","=","ADVGuard Device"],["attached_to_name","=","${deviceSystemId}"]]&fields=["name","file_name","file_size","file_url","creation"]`
+      );
+      return files || [];
+    } catch (e) {
+      console.error("Failed to fetch device files:", e);
+      return [];
+    }
+  },
+
+  deleteDeviceFile: async (fileDocName) => {
+    const response = await fetch(`/api/resource/File/${fileDocName}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`File deletion failed: ${response.status} - ${text}`);
+    }
+  }
 }));
 export default useAppStore;

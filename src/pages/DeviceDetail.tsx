@@ -10,13 +10,45 @@ import { TicketCategory, TicketPriority, SupportTicket, PaymentStatus } from '..
 
 export const DeviceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { devices, customers, plans, tickets, renewalHistory, addSupportTicket, renewDeviceLicense, currentUser } = useAppStore();
+  const { 
+    devices, customers, plans, tickets, renewalHistory, 
+    addSupportTicket, renewDeviceLicense, currentUser,
+    uploadDeviceFile, fetchDeviceFiles, deleteDeviceFile
+  } = useAppStore();
 
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [licenseFiles, setLicenseFiles] = useState<Array<{ id: string; name: string; size: string; date: string }>>([
-    { id: '1', name: 'advguard_license_active.lic', size: '2.4 KB', date: '2026-06-19' }
-  ]);
+  const [licenseFiles, setLicenseFiles] = useState<any[]>([]);
+  const [isFilesLoading, setIsFilesLoading] = useState(false);
+
+  const device = devices.find(d => d.id === id);
+
+  React.useEffect(() => {
+    if (device?.systemId) {
+      loadFiles();
+    }
+  }, [device?.systemId]);
+
+  const loadFiles = async () => {
+    if (!device?.systemId) return;
+    setIsFilesLoading(true);
+    try {
+      const files = await fetchDeviceFiles(device.systemId);
+      setLicenseFiles(files);
+    } catch (e) {
+      console.error("Failed to load device files from ERPNext:", e);
+    } finally {
+      setIsFilesLoading(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (!bytes) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
 
   // Renewal Form State
   const [selectedPlanId, setSelectedPlanId] = useState('');
@@ -30,7 +62,6 @@ export const DeviceDetail: React.FC = () => {
   const [tCategory, setTCategory] = useState<TicketCategory>('Technical');
   const [tPriority, setTPriority] = useState<TicketPriority>('Medium');
 
-  const device = devices.find(d => d.id === id);
   if (!device) {
     return (
       <div className="p-8 text-center text-slate-400">
@@ -327,20 +358,23 @@ export const DeviceDetail: React.FC = () => {
             <div className="flex justify-between items-center border-b border-slate-800/60 pb-2">
               <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">License File Vault</h3>
               <label className="flex items-center gap-1.5 px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-bold cursor-pointer text-[10px] transition shadow">
-                <Upload className="w-3 h-3" /> Upload File
+                <Upload className="w-3 h-3" /> {isFilesLoading ? 'Uploading...' : 'Upload File'}
                 <input
                   type="file"
                   className="hidden"
-                  onChange={(e) => {
+                  disabled={isFilesLoading}
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      const newFile = {
-                        id: Date.now().toString(),
-                        name: file.name,
-                        size: `${(file.size / 1024).toFixed(1)} KB`,
-                        date: new Date().toISOString().split('T')[0]
-                      };
-                      setLicenseFiles(prev => [...prev, newFile]);
+                    if (file && device?.systemId) {
+                      setIsFilesLoading(true);
+                      try {
+                        await uploadDeviceFile(device.systemId, file);
+                        await loadFiles();
+                      } catch (err) {
+                        alert("File upload failed. Make sure your ERPNext session is active.");
+                      } finally {
+                        setIsFilesLoading(false);
+                      }
                     }
                   }}
                 />
@@ -348,37 +382,54 @@ export const DeviceDetail: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {licenseFiles.map(file => (
-                <div key={file.id} className="p-2.5 rounded bg-slate-950/40 border border-slate-850 flex justify-between items-center text-[11px]">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileText className="w-4 h-4 text-brand-400 shrink-0" />
-                    <div className="truncate">
-                      <p className="font-semibold text-slate-200 truncate">{file.name}</p>
-                      <p className="text-[9px] text-slate-500">{file.size} &bull; Uploaded {file.date}</p>
+              {isFilesLoading && licenseFiles.length === 0 ? (
+                <p className="text-xs text-slate-500 p-4 text-center animate-pulse">Syncing files with ERPNext...</p>
+              ) : (
+                licenseFiles.map(file => (
+                  <div key={file.name} className="p-2.5 rounded bg-slate-950/40 border border-slate-850 flex justify-between items-center text-[11px]">
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText className="w-4 h-4 text-brand-400 shrink-0" />
+                      <div className="truncate">
+                        <p className="font-semibold text-slate-200 truncate">{file.file_name}</p>
+                        <p className="text-[9px] text-slate-500">{formatFileSize(file.file_size)} &bull; Uploaded {file.creation?.split(' ')[0] || ''}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <a
+                        href={file.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-355 hover:text-white transition"
+                        title="Download / View File"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to delete ${file.file_name}?`)) {
+                            setIsFilesLoading(true);
+                            try {
+                              await deleteDeviceFile(file.name);
+                              await loadFiles();
+                            } catch (err) {
+                              alert("Failed to delete file from ERPNext.");
+                            } finally {
+                              setIsFilesLoading(false);
+                            }
+                          }
+                        }}
+                        className="p-1 rounded bg-slate-800 hover:bg-red-950/30 text-slate-355 hover:text-red-400 transition"
+                        title="Delete File"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
+                ))
+              )}
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <a
-                      href={`data:text/plain;charset=utf-8,${encodeURIComponent("ADVGuard Mock License Key Certificate File Content")}`}
-                      download={file.name}
-                      className="p-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-355 hover:text-white transition"
-                      title="Download File"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </a>
-                    <button
-                      onClick={() => setLicenseFiles(prev => prev.filter(f => f.id !== file.id))}
-                      className="p-1 rounded bg-slate-800 hover:bg-red-950/30 text-slate-355 hover:text-red-400 transition"
-                      title="Delete File"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {licenseFiles.length === 0 && (
+              {!isFilesLoading && licenseFiles.length === 0 && (
                 <p className="text-xs text-slate-500 p-2 italic text-center">No license files uploaded</p>
               )}
             </div>
