@@ -126,12 +126,38 @@ export const useAppStore = create<AppState>((set, get) => ({
       // On successful ERPNext login, get current logged user details
       const loggedUserEmail = await erpnextRequest('/api/method/frappe.auth.get_logged_user', 'GET');
       
+      let userRole: UserRole = 'support';
+      try {
+        const userDetails = await erpnextRequest(`/api/resource/User/${loggedUserEmail}`, 'GET');
+        const rolesList = userDetails.roles || [];
+        const hasAdminRole = rolesList.some((r: any) => 
+          r.role === 'System Manager' || 
+          r.role === 'Administrator' || 
+          r.role === 'ADVGuard Admin'
+        );
+        const hasSalesRole = rolesList.some((r: any) => 
+          r.role === 'Sales User' || 
+          r.role === 'Sales Manager'
+        );
+
+        if (hasAdminRole || loggedUserEmail === 'Administrator') {
+          userRole = 'admin';
+        } else if (hasSalesRole) {
+          userRole = 'sales';
+        }
+      } catch (e) {
+        console.error("Could not fetch user details/roles from ERPNext, applying fallback:", e);
+        if (loggedUserEmail.toLowerCase().includes('admin') || loggedUserEmail === 'Administrator') {
+          userRole = 'admin';
+        }
+      }
+
       set({
         currentUser: {
           id: loggedUserEmail,
           name: loggedUserEmail.split('@')[0],
           email: loggedUserEmail,
-          role: loggedUserEmail === 'Administrator' ? 'admin' : 'support'
+          role: userRole
         },
         isLoggedIn: true
       });
