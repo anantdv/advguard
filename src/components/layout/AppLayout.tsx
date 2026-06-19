@@ -25,6 +25,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const unreadNotifs = notifications.filter(n => !n.read);
   const currentPath = location.pathname;
 
+  if (currentPath === '/login') {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row text-slate-100">
       
