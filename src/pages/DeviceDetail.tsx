@@ -331,7 +331,6 @@ export const DeviceDetail: React.FC = () => {
                 <input
                   type="file"
                   className="hidden"
-                  accept=".lic,.txt,.json,.key,.pem,.crt"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
