@@ -4,7 +4,7 @@ import { useAppStore } from '../store/appStore';
 import { 
   ArrowLeft, HardDrive, ShieldCheck, ShieldAlert, ShieldOff,
   User, RefreshCw, Plus, Ticket, Clock, Cpu, Calendar, Activity,
-  Globe, Info, FileText, CheckCircle
+  Globe, Info, FileText, CheckCircle, Upload, Trash2, Download
 } from 'lucide-react';
 import { TicketCategory, TicketPriority, SupportTicket, PaymentStatus } from '../types';
 
@@ -14,6 +14,9 @@ export const DeviceDetail: React.FC = () => {
 
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [licenseFiles, setLicenseFiles] = useState<Array<{ id: string; name: string; size: string; date: string }>>([
+    { id: '1', name: 'advguard_license_active.lic', size: '2.4 KB', date: '2026-06-19' }
+  ]);
 
   // Renewal Form State
   const [selectedPlanId, setSelectedPlanId] = useState('');
@@ -317,6 +320,69 @@ export const DeviceDetail: React.FC = () => {
             <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Physical Deployment Site</h3>
             <p className="font-medium text-slate-200 pt-1">{device.location}</p>
             <p className="text-[10px] text-slate-500">Installation context: Registered on {device.installationDate}</p>
+          </div>
+
+          {/* License Files Vault Card */}
+          <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 glass-panel text-xs space-y-3">
+            <div className="flex justify-between items-center border-b border-slate-800/60 pb-2">
+              <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">License File Vault</h3>
+              <label className="flex items-center gap-1.5 px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-bold cursor-pointer text-[10px] transition shadow">
+                <Upload className="w-3 h-3" /> Upload File
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".lic,.txt,.json,.key,.pem,.crt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const newFile = {
+                        id: Date.now().toString(),
+                        name: file.name,
+                        size: `${(file.size / 1024).toFixed(1)} KB`,
+                        date: new Date().toISOString().split('T')[0]
+                      };
+                      setLicenseFiles(prev => [...prev, newFile]);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+
+            <div className="space-y-2">
+              {licenseFiles.map(file => (
+                <div key={file.id} className="p-2.5 rounded bg-slate-950/40 border border-slate-850 flex justify-between items-center text-[11px]">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileText className="w-4 h-4 text-brand-400 shrink-0" />
+                    <div className="truncate">
+                      <p className="font-semibold text-slate-200 truncate">{file.name}</p>
+                      <p className="text-[9px] text-slate-500">{file.size} &bull; Uploaded {file.date}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`data:text/plain;charset=utf-8,${encodeURIComponent("ADVGuard Mock License Key Certificate File Content")}`}
+                      download={file.name}
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-355 hover:text-white transition"
+                      title="Download File"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      onClick={() => setLicenseFiles(prev => prev.filter(f => f.id !== file.id))}
+                      className="p-1 rounded bg-slate-800 hover:bg-red-950/30 text-slate-355 hover:text-red-400 transition"
+                      title="Delete File"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {licenseFiles.length === 0 && (
+                <p className="text-xs text-slate-500 p-2 italic text-center">No license files uploaded</p>
+              )}
+            </div>
           </div>
         </div>
 
